@@ -1,0 +1,215 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <style>
+        body {
+            text-align: center;
+            background-color: burlywood;
+        }
+    </style>
+<body>
+
+
+
+  <ul id="tests"></ul>
+
+  <button id="btn-add">Add test</button>
+    <button id="btn-save">Save tests</button>
+
+  <div id="div-result"></div>
+  <div id="div-total"></div>
+
+  <script type="text/javascript">
+
+(function ( document, window ) {
+
+  var result = document.getElementById('div-result')
+    , total = document.getElementById('div-total');
+
+  // make default flash cards
+  function fc() {
+    this.cards = {};
+  }
+
+  // undo upper/lower case
+  fc.prototype.simplify = function ( val ) {
+    if ( val !== null ) {
+      return val.toLowerCase().trim();
+    }
+    return null;
+  }
+
+  // add to library 
+  fc.prototype.add = function ( key, val) {
+    key = this.simplify( key );
+    val = this.simplify( val );
+    if ( key !== null && val !== null ) {
+      this.cards[key] = val;
+    }
+  }
+
+  // check the right value for the key
+  fc.prototype.check = function ( key, val ) {
+    key = this.simplify( key );
+    val = this.simplify( val );
+
+    if ( this.cards.hasOwnProperty( key ) && this.cards[ key ] === val ) {
+      return true;
+    }
+    return false;
+  }
+
+  // test values
+  fc.prototype.start = function () {
+    var rights = 0
+      , wrongs = 0;
+
+    result.innerHTML = '';
+    total.innerHTML = '';
+
+    for (var i in this.cards) {
+      var guess = prompt('What is "' + i + '"?' );
+      if ( this.check( i, guess ) ) {
+        result.innerHTML += 'Right: ' + i + ' &rarr; ' + this.cards[ i ];
+        rights++;
+      } else {
+        result.innerHTML += 'Wrong: ' + guess + ', ' + i + ' &rarr; ' + this.cards[ i ];
+        wrongs++;
+      }
+      result.innerHTML += '<br>';
+    }
+    total.innerHTML = 'Right answers: ' + rights + '<br>Wrong answers: ' +  wrongs ;
+  }
+
+
+
+
+
+
+
+
+
+  var app = ( function ( document, window ) {
+    // declare references    
+    var tests =  {}
+      , el = document.getElementById('tests');
+
+     function addTest () {
+      var name = prompt('test name?');
+      if ( name !== null ) {
+        tests[ name ] = new fc();
+        render();
+      }
+    }
+
+    // register some events
+    function registerEvents () {
+      document.getElementById('btn-add').addEventListener( 'click', addTest, false );
+      document.getElementById('btn-save').addEventListener( 'click', save, false );
+      // document.getElementById('btn-load').addEventListener( 'click', load, false );
+      document.getElementById('btn-clear').addEventListener( 'click', clear, false );
+    }
+
+    // render function
+    function render () {
+      var li = undefined
+        , linkAdd = undefined
+        , linkStart = undefined
+        , docFrag = document.createDocumentFragment();
+
+      // clear the dom
+         while (el.firstChild) {
+          el.removeChild( el.firstChild );
+      };
+      el.innerHTML = '';
+
+      for ( var i in tests) {
+        li = document.createElement( 'li' );
+        li.innerHTML = i; // test name
+
+        li.appendChild( document.createTextNode(' -> ') );
+     
+
+        // btn "start"
+        btnStart = document.createElement( 'button' );
+        btnStart.setAttribute('data', i );
+
+        btnStart.addEventListener( 'click', function( e ){
+          var my = this.getAttribute( 'data');
+          tests[ my ].start();
+        }, false );
+
+        btnStart.textContent = 'Start test';
+        li.appendChild( btnStart );
+
+        // btn "add" 
+        btnAdd = document.createElement( 'button' );
+        btnAdd.setAttribute('data', i );
+
+        btnAdd.addEventListener( 'click', function( e ){
+          var my = this.getAttribute( 'data');
+          tests[ my ].add( prompt( 'key' ), prompt( 'value' ));
+        }, false );
+
+        btnAdd.textContent = 'Add item';
+        li.appendChild( btnAdd );
+
+        // "btn remove test"
+        btnRemove = document.createElement( 'button' );
+        btnRemove.setAttribute('data', i );
+
+        btnRemove.addEventListener( 'click', function( e ){
+          var my = this.getAttribute( 'data');
+          delete tests[ my ];
+          render();
+        }, false );
+
+        btnRemove.textContent = 'Remove test';
+        li.appendChild( btnRemove );
+
+        docFrag.appendChild( li );
+      };
+
+      el.appendChild( docFrag );
+    }
+
+    // save tests to localstorage
+    function save () {
+      var data = JSON.stringify( tests );
+      console.log( data );
+      localStorage.setItem( 'tests', data );
+    }
+
+    // load tests form localstorage
+    function load () {
+      var saved = localStorage[ 'tests' ] || false;
+      if ( saved ) {
+        var data = undefined;
+        data = JSON.parse( localStorage.getItem( 'tests' ) );
+        console.log( data );
+
+        // initialize test objects with loaded data
+        for( var i in data ) {
+          tests[ i ] = new fc();
+          for ( var j in data[ i ] ) {
+            tests[ i ][ j ] = data[ i ][ j ];
+          }
+        }
+        render();
+      } 
+    }
+
+    function clear () {
+      localStorage.clear();
+      tests = [];
+      render();
+    }
+
+    // initialisation part
+    registerEvents();
+    load();
+
+  } ) ( document, window );
+} ) ( document, window );
+  </script>
+</html>
